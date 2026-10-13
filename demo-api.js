@@ -18,7 +18,7 @@
       this.researchers = new Map(data.researchers.map((item) => [item.id, item]));
       this.papers = new Map(data.papers.map((item) => [item.id, item]));
       this.topics = new Map(data.topics.map((item) => [item.id, item]));
-      this.venues = new Map(data.venues.map((item) => [item.id, item]));
+      this.conferences = new Map(data.conferences.map((item) => [item.id, item]));
       this.institutions = new Map(data.institutions.map((item) => [item.id, item]));
       this.paperAuthors = new Map();
       this.researcherPapers = new Map();
@@ -58,7 +58,7 @@
         this.data.hasTopic.length +
         this.data.cites.length +
         this.data.researchers.filter((item) => item.institutionId).length +
-        this.data.papers.filter((item) => item.venueId).length;
+        this.data.papers.filter((item) => item.conferenceId).length;
       return {
         status: "ok",
         mode: "github-pages-demo",
@@ -67,7 +67,7 @@
           researchers: this.researchers.size,
           papers: this.papers.size,
           topics: this.topics.size,
-          venues: this.venues.size,
+          conferences: this.conferences.size,
           institutions: this.institutions.size,
           relationships,
         },
@@ -89,14 +89,14 @@
 
     paperCard(id) {
       const paper = this.papers.get(id);
-      const venue = this.venues.get(paper.venueId) || {};
+      const conference = this.conferences.get(paper.conferenceId) || {};
       return {
         id: paper.id,
         name: paper.title,
         title: paper.title,
         label: "Paper",
         year: paper.year,
-        venue: venue.name || "",
+        conference: conference.name || "",
         citationCount: paper.citationCount ?? this.rows(this.inCites, id).length,
         sourceUrl: paper.sourceUrl || "",
         isOpenAccess: Boolean(paper.isOpenAccess),
@@ -238,7 +238,7 @@
       if (!paper) return null;
       return {
         ...paper,
-        venue: this.venues.get(paper.venueId) || null,
+        conference: this.conferences.get(paper.conferenceId) || null,
         authors: this.rows(this.paperAuthors, paperId).map((row) => this.researcherCard(row.researcherId)),
         topics: this.rows(this.paperTopics, paperId).map((row) => ({ ...this.topics.get(row.topicId), score: Number(row.score ?? 1) })),
         cites: this.rows(this.outCites, paperId).map((id) => this.paperCard(id)),
@@ -257,7 +257,7 @@
         const paper = this.papers.get(nodeId);
         for (const edge of this.rows(this.paperAuthors, nodeId)) neighbors.push([edge.researcherId, "AUTHORED"]);
         for (const edge of this.rows(this.paperTopics, nodeId)) neighbors.push([edge.topicId, "HAS_TOPIC"]);
-        if (paper.venueId) neighbors.push([paper.venueId, "PUBLISHED_IN"]);
+        if (paper.conferenceId) neighbors.push([paper.conferenceId, "PUBLISHED_IN"]);
         for (const id of this.rows(this.outCites, nodeId)) neighbors.push([id, "CITES"]);
         for (const id of this.rows(this.inCites, nodeId)) neighbors.push([id, "CITED_BY"]);
       }
@@ -274,9 +274,9 @@
         const item = this.topics.get(nodeId);
         return { id: item.id, name: item.name, label: "Topic", description: item.description || "" };
       }
-      if (this.venues.has(nodeId)) {
-        const item = this.venues.get(nodeId);
-        return { id: item.id, name: item.name, label: "Venue", type: item.type || "" };
+      if (this.conferences.has(nodeId)) {
+        const item = this.conferences.get(nodeId);
+        return { id: item.id, name: item.name, label: "Conference", type: item.type || "" };
       }
       const item = this.institutions.get(nodeId);
       return { id: item.id, name: item.name, label: "Institution", country: item.country || "" };

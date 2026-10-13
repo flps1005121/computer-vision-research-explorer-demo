@@ -440,7 +440,7 @@ h3 {
 .graph-svg-node[data-label="Researcher"] circle { fill: var(--accent); }
 .graph-svg-node[data-label="Paper"] circle { fill: var(--blue); }
 .graph-svg-node[data-label="Topic"] circle { fill: var(--yellow); }
-.graph-svg-node[data-label="Venue"] circle { fill: var(--rose); }
+.graph-svg-node[data-label="Conference"] circle { fill: var(--rose); }
 .graph-svg-node[data-label="Institution"] circle { fill: #5f6673; }
 
 .graph-tools {
@@ -503,7 +503,7 @@ h3 {
   background: var(--yellow);
 }
 
-.graph-node[data-label="Venue"] {
+.graph-node[data-label="Conference"] {
   background: var(--rose);
 }
 

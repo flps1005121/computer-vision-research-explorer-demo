@@ -174,7 +174,7 @@ function renderResearcherCard(item) {
 }
 
 function renderPaperCard(item) {
-  const meta = `${item.year || "n.d."} · ${escapeHtml(item.venue || "")}`;
+  const meta = `${item.year || "n.d."} · ${escapeHtml(item.conference || "")}`;
   const sourceUrl = safeUrl(item.sourceUrl);
   const actions = `<div class="tag-row"><button onclick="selectPaper('${item.id}')">查看推薦</button>${sourceUrl ? `<a class="button-link secondary" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noreferrer">OpenAlex</a>` : ""}</div>`;
   return card(item.title || item.name, meta, `<p>全球引用 ${item.citationCount ?? 0} 次${item.isOpenAccess ? " · Open Access" : ""}</p>`, actions);
@@ -415,7 +415,7 @@ function showNode(node) {
     <p class="meta">ID: ${escapeHtml(node.id)}</p>
     ${node.description ? `<p>${escapeHtml(node.description)}</p>` : ""}
     ${node.institution ? `<p>${escapeHtml(node.institution)}</p>` : ""}
-    ${node.year ? `<p>${node.year} · ${escapeHtml(node.venue || "")}</p>` : ""}
+    ${node.year ? `<p>${node.year} · ${escapeHtml(node.conference || "")}</p>` : ""}
     <div class="tag-row">${node.label === "Researcher" ? `<button onclick="selectResearcher('${node.id}')">Profile</button>` : ""}${node.label === "Paper" ? `<button onclick="selectPaper('${node.id}')">Paper</button>` : ""}</div>`;
 }
 
@@ -437,9 +437,9 @@ async function loadPaper() {
   const landingPageUrl = safeUrl(paper.landingPageUrl);
   const pdfUrl = safeUrl(paper.pdfUrl);
   $("#paperPanel").innerHTML = `
-    <p class="eyebrow">${escapeHtml(paper.venue?.type || "Paper")}</p>
+    <p class="eyebrow">${escapeHtml(paper.conference?.type || "Paper")}</p>
     <h2>${escapeHtml(paper.title)}</h2>
-    <p class="meta">${paper.year || "n.d."} · ${escapeHtml(paper.venue?.name || "")} · ${escapeHtml(paper.doi || "")}</p>
+    <p class="meta">${paper.year || "n.d."} · ${escapeHtml(paper.conference?.name || "")} · ${escapeHtml(paper.doi || "")}</p>
     <p>${escapeHtml(paper.abstract || "")}</p>
     <h3>作者</h3>
     ${tags(paper.authors.map((item) => item.name))}
