@@ -150,7 +150,10 @@
           </div>
         </div>
         <div class="graph-layout">
-          <div class="graph-canvas" id="graphCanvas" aria-label="Graph visualization"></div>
+          <div>
+            <p class="meta graph-summary" id="graphSummary"></p>
+            <div class="graph-canvas" id="graphCanvas" aria-label="Graph visualization"></div>
+          </div>
           <aside class="detail-panel" id="nodeDetails">點選節點查看詳細資訊。</aside>
         </div>
       </section>
@@ -181,7 +184,7 @@
         <div class="split">
           <div id="paperPanel"></div>
           <div>
-            <h3>相關論文推薦</h3>
+            <h3 id="recommendationHeading">Top-5 相關論文推薦</h3>
             <div class="stack" id="recommendations"></div>
           </div>
         </div>

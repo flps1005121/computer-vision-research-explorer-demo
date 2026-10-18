@@ -100,7 +100,34 @@ async function init() {
   $("#graphStart").innerHTML = optionList(state.researchers);
 
   await loadPaperChoices();
+  applyDemoParameters();
   await Promise.allSettled([runSearch(), loadLibrary(), loadTopic(), loadProfile(), loadGraph(), loadPath(), loadPaper(), loadDashboard()]);
+  const requestedView = new URLSearchParams(window.location.search).get("view");
+  const viewIds = {
+    search: "searchView", dashboard: "dashboardView", library: "libraryView",
+    topic: "topicView", profile: "profileView", graph: "graphView",
+    path: "connectionView", paper: "paperView",
+  };
+  activate(viewIds[requestedView] || "searchView");
+  document.body.dataset.ready = "true";
+}
+
+function selectKnownValue(selector, value) {
+  if (!value) return;
+  const select = $(selector);
+  if ([...select.options].some((option) => option.value === value)) select.value = value;
+}
+
+function applyDemoParameters() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("q")) $("#searchInput").value = params.get("q");
+  selectKnownValue("#topicSelect", params.get("topic"));
+  selectKnownValue("#researcherSelect", params.get("researcher"));
+  selectKnownValue("#graphStart", params.get("graph") || params.get("researcher"));
+  selectKnownValue("#graphDepth", params.get("depth"));
+  selectKnownValue("#sourceResearcher", params.get("source"));
+  selectKnownValue("#targetResearcher", params.get("target"));
+  selectKnownValue("#paperSelect", params.get("paper"));
 }
 
 async function loadDashboard() {
@@ -226,6 +253,7 @@ async function loadGraph() {
   const depth = $("#graphDepth").value;
   const graph = await api(`/api/researchers/${id}/network?depth=${depth}&limit=90`);
   state.graph = graph;
+  $("#graphSummary").textContent = `輸入：${$("#graphStart").selectedOptions[0]?.textContent || id} · ${depth} hop；輸出：${graph.nodes.length} 個節點、${graph.edges.length} 條關係（上限 90 個節點）。`;
   drawGraph(graph, true);
 }
 
@@ -423,10 +451,16 @@ async function loadPath() {
   const source = $("#sourceResearcher").value;
   const target = $("#targetResearcher").value;
   const path = await api(`/api/researchers/path?source=${source}&target=${target}`);
+  const pathItems = path.nodes.map((node, index) => {
+    if (index >= path.edges.length) return `<span class="path-chip">${escapeHtml(node.name)}<small> ${escapeHtml(node.label)}</small></span>`;
+    const edge = path.edges[index];
+    const direction = edge.source === node.id ? `${escapeHtml(edge.type)} →` : `← ${escapeHtml(edge.type)}`;
+    return `<span class="path-chip">${escapeHtml(node.name)}<small> ${escapeHtml(node.label)}</small></span><span class="arrow">${direction}</span>`;
+  }).join("");
   $("#pathPanel").innerHTML = `
     <p class="meta">${escapeHtml(path.explanation)}</p>
     <div class="path-list">
-      ${path.nodes.map((node, index) => `<span class="path-chip">${escapeHtml(node.name)}<small> ${escapeHtml(node.label)}</small></span>${index < path.edges.length ? `<span class="arrow">${escapeHtml(path.edges[index].type)} -></span>` : ""}`).join("")}
+      ${pathItems}
     </div>`;
 }
 
@@ -436,6 +470,7 @@ async function loadPaper() {
   const sourceUrl = safeUrl(paper.sourceUrl);
   const landingPageUrl = safeUrl(paper.landingPageUrl);
   const pdfUrl = safeUrl(paper.pdfUrl);
+  const citationCard = (item) => card(item.title || item.name, `${item.year || "n.d."} · ${escapeHtml(item.conference || "")}`, "", `<button onclick="selectPaper('${item.id}')">查看 Paper Detail</button>`);
   $("#paperPanel").innerHTML = `
     <p class="eyebrow">${escapeHtml(paper.conference?.type || "Paper")}</p>
     <h2>${escapeHtml(paper.title)}</h2>
@@ -451,7 +486,12 @@ async function loadPaper() {
       ${pdfUrl ? `<a class="button-link secondary" href="${escapeHtml(pdfUrl)}" target="_blank" rel="noreferrer">PDF</a>` : ""}
     </div>
     <h3>引用資訊</h3>
-    <p class="meta">全球引用 ${paper.citationCount ?? 0} 次 · 資料集內引用 ${paper.cites.length} 篇 · 資料集內被引用 ${paper.citedBy.length} 篇</p>`;
+    <p class="meta">全球引用 ${paper.citationCount ?? 0} 次 · 資料集內引用 ${paper.cites.length} 篇 · 資料集內被引用 ${paper.citedBy.length} 篇</p>
+    <div class="citation-grid">
+      <section><h3>本論文引用</h3><div class="stack">${paper.cites.length ? paper.cites.slice(0, 4).map(citationCard).join("") : `<div class="empty">資料集內無引用項目</div>`}</div></section>
+      <section><h3>引用本論文</h3><div class="stack">${paper.citedBy.length ? paper.citedBy.slice(0, 4).map(citationCard).join("") : `<div class="empty">資料集內無被引用項目</div>`}</div></section>
+    </div>`;
+  $("#recommendationHeading").textContent = `Top-${recs.recommendations.length} 相關論文推薦`;
   $("#recommendations").innerHTML = recs.recommendations.map((item) => {
     const breakdown = `混合 ${Number(item.score || 0).toFixed(3)} · 語意 ${Number(item.vectorScore || 0).toFixed(3)} · 圖譜 ${Number(item.graphScore || 0).toFixed(3)}`;
     return card(item.title, `${breakdown} · ${item.year}`, `<p>${item.reasons.map(escapeHtml).join("<br>")}</p>`, `<button onclick="selectPaper('${item.id}')">查看</button>`);
